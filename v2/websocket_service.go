@@ -714,6 +714,8 @@ type WsBookTickerEvent struct {
 	BestAskQty   string `json:"A"`
 }
 
+type WsAllBookTickerEvent []*WsBookTickerEvent
+
 // WsBookTickerHandler handle websocket that pushes updates to the best bid or ask price or quantity in real-time for a specified symbol.
 type WsBookTickerHandler func(event *WsBookTickerEvent)
 
@@ -733,12 +735,14 @@ func WsBookTickerServe(symbol string, handler WsBookTickerHandler, errHandler Er
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
+type WsAllBookTickerHandler func(event WsAllBookTickerEvent)
+
 // WsAllBookTickerServe serve websocket that pushes updates to the best bid or ask price or quantity in real-time for all symbols.
-func WsAllBookTickerServe(handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+func WsAllBookTickerServe(handler WsAllBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := fmt.Sprintf("%s/!bookTicker", getWsEndpoint())
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
-		event := new(WsBookTickerEvent)
+		var event WsAllBookTickerEvent
 		err := json.Unmarshal(message, &event)
 		if err != nil {
 			errHandler(err)
